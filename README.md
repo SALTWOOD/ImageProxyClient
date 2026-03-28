@@ -147,6 +147,9 @@ options.Background(255, 255, 255, 128)      // RGBA background
 options.StripMetadata()                     // Remove EXIF metadata
 options.StripColorProfile()                 // Remove color profile
 options.CacheBuster("v1")                   // Cache buster
+options.Expires(1735689600L)                // Set expiration (Unix timestamp)
+options.Expires(DateTime.UtcNow.AddHours(1)) // Set expiration (DateTime)
+options.Expires(DateTimeOffset.UtcNow.AddHours(1)) // Set expiration (DateTimeOffset)
 options.Page(1)                             // PDF page number
 options.VideoFrame(5.0f)                    // Video frame (seconds)
 ```

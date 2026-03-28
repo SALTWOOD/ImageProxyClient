@@ -147,6 +147,9 @@ options.Background(255, 255, 255, 128)      // RGBA 背景色
 options.StripMetadata()                     // 移除 EXIF 元数据
 options.StripColorProfile()                 // 移除色彩配置
 options.CacheBuster("v1")                   // 缓存破坏
+options.Expires(1735689600L)                // 设置过期时间（Unix 时间戳）
+options.Expires(DateTime.UtcNow.AddHours(1)) // 设置过期时间（DateTime）
+options.Expires(DateTimeOffset.UtcNow.AddHours(1)) // 设置过期时间（DateTimeOffset）
 options.Page(1)                             // PDF 页码
 options.VideoFrame(5.0f)                    // 视频帧（秒）
 ```

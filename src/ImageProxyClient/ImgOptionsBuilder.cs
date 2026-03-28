@@ -317,6 +317,49 @@ public class ImgOptionsBuilder
     #region Other Options
 
     /// <summary>
+    /// Sets the expiration time for the image URL.
+    /// When set, imgproxy will check the provided unix timestamp and return 404 when expired.
+    /// </summary>
+    /// <param name="timestamp">Unix timestamp (seconds since epoch). Use null to clear.</param>
+    public ImgOptionsBuilder Expires(long? timestamp)
+    {
+        if (timestamp.HasValue)
+        {
+            _parts.Add($"exp:{timestamp.Value}");
+        }
+        return this;
+    }
+
+    /// <summary>
+    /// Sets the expiration time for the image URL using a DateTime.
+    /// When set, imgproxy will check the provided unix timestamp and return 404 when expired.
+    /// </summary>
+    /// <param name="expiresAt">Expiration DateTime (will be converted to Unix timestamp). Use null to clear.</param>
+    public ImgOptionsBuilder Expires(DateTime? expiresAt)
+    {
+        if (expiresAt.HasValue)
+        {
+            var timestamp = new DateTimeOffset(expiresAt.Value).ToUnixTimeSeconds();
+            _parts.Add($"exp:{timestamp}");
+        }
+        return this;
+    }
+
+    /// <summary>
+    /// Sets the expiration time for the image URL using a DateTimeOffset.
+    /// When set, imgproxy will check the provided unix timestamp and return 404 when expired.
+    /// </summary>
+    /// <param name="expiresAt">Expiration DateTimeOffset (will be converted to Unix timestamp). Use null to clear.</param>
+    public ImgOptionsBuilder Expires(DateTimeOffset? expiresAt)
+    {
+        if (expiresAt.HasValue)
+        {
+            _parts.Add($"exp:{expiresAt.Value.ToUnixTimeSeconds()}");
+        }
+        return this;
+    }
+
+    /// <summary>
     /// Sets a cache buster value.
     /// </summary>
     public ImgOptionsBuilder CacheBuster(string value)
