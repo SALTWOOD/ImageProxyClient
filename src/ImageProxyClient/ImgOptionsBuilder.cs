@@ -23,6 +23,14 @@ public class ImgOptionsBuilder
     }
 
     /// <summary>
+    /// Resizes the image to specified dimensions using a strongly-typed resize mode.
+    /// </summary>
+    /// <param name="width">Target width.</param>
+    /// <param name="height">Target height.</param>
+    /// <param name="mode">Resize mode (default: Fill).</param>
+    public ImgOptionsBuilder Resize(int width, int height, ResizeMode mode) => Resize(width, height, mode.ToImgproxyString());
+
+    /// <summary>
     /// Sets the resize type.
     /// </summary>
     /// <param name="type">Type: fit, fill, fill-down, force, auto.</param>
@@ -33,6 +41,12 @@ public class ImgOptionsBuilder
     }
 
     /// <summary>
+    /// Sets the resize type using a strongly-typed enum value.
+    /// </summary>
+    /// <param name="type">Resize type.</param>
+    public ImgOptionsBuilder ResizingType(ResizeMode type) => ResizingType(type.ToImgproxyString());
+
+    /// <summary>
     /// Sets the resizing algorithm.
     /// </summary>
     /// <param name="algorithm">Algorithm: nearest, linear, cubic, lanczos2, lanczos3, lanczos.</param>
@@ -41,6 +55,12 @@ public class ImgOptionsBuilder
         _parts.Add($"ra:{algorithm}");
         return this;
     }
+
+    /// <summary>
+    /// Sets the resizing algorithm using a strongly-typed enum value.
+    /// </summary>
+    /// <param name="algorithm">Resizing algorithm.</param>
+    public ImgOptionsBuilder ResizingAlgorithm(ResizingAlgorithm algorithm) => ResizingAlgorithm(algorithm.ToImgproxyString());
 
     /// <summary>
     /// Enables or disables image enlargement.
@@ -100,6 +120,12 @@ public class ImgOptionsBuilder
     }
 
     /// <summary>
+    /// Sets the gravity (crop focus point) using a strongly-typed enum value.
+    /// </summary>
+    /// <param name="type">Gravity type.</param>
+    public ImgOptionsBuilder Gravity(GravityType type) => Gravity(type.ToImgproxyString());
+
+    /// <summary>
     /// Sets smart gravity (face detection).
     /// </summary>
     public ImgOptionsBuilder GravitySmart()
@@ -135,12 +161,18 @@ public class ImgOptionsBuilder
     /// <summary>
     /// Sets the output format.
     /// </summary>
-    /// <param name="extension">Format extension: webp, jpg, png, gif, avif, ico.</param>
+    /// <param name="extension">Format extension: webp, jpg, png, gif, avif, ico, jxl, svg, heic, bpm, tiff, or use best to let imgproxy decide.</param>
     public ImgOptionsBuilder Format(string extension)
     {
         _parts.Add($"ext:{extension}");
         return this;
     }
+
+    /// <summary>
+    /// Sets the output format using a strongly-typed enum value.
+    /// </summary>
+    /// <param name="format">Image format.</param>
+    public ImgOptionsBuilder Format(ImageFormat format) => Format(format.ToImgproxyString());
 
     /// <summary>
     /// Sets the image quality.
@@ -289,19 +321,31 @@ public class ImgOptionsBuilder
 
     #region Watermark
 
+    // re: repeat and tile the watermark to fill the entire image
+    // ch: same as `re` but watermarks are placed in a chessboard order
     /// <summary>
     /// Adds a watermark.
     /// </summary>
     /// <param name="opacity">Opacity (0-1).</param>
-    /// <param name="position">Position (ce, no, noea, ea, soea, so, sowe, we, nowe).</param>
+    /// <param name="position">Position (ce, no, noea, ea, soea, so, sowe, we, nowe, re, ch).</param>
     /// <param name="xOffset">X offset.</param>
     /// <param name="yOffset">Y offset.</param>
     /// <param name="scale">Scale factor.</param>
-    public ImgOptionsBuilder Watermark(float opacity, string position = "ce", int xOffset = 0, int yOffset = 0, float scale = 1.0f)
+    public ImgOptionsBuilder Watermark(float opacity, string position, int xOffset = 0, int yOffset = 0, float scale = 1.0f)
     {
         _parts.Add($"wm:{opacity:F2}:{position}:{xOffset}:{yOffset}:{scale:F2}");
         return this;
     }
+
+    /// <summary>
+    /// Adds a watermark using a strongly-typed position enum.
+    /// </summary>
+    /// <param name="opacity">Opacity (0-1).</param>
+    /// <param name="position">Watermark position.</param>
+    /// <param name="xOffset">X offset.</param>
+    /// <param name="yOffset">Y offset.</param>
+    /// <param name="scale">Scale factor.</param>
+    public ImgOptionsBuilder Watermark(float opacity, WatermarkPosition position, int xOffset = 0, int yOffset = 0, float scale = 1.0f) => Watermark(opacity, position.ToImgproxyString(), xOffset, yOffset, scale);
 
     /// <summary>
     /// Adds a simple watermark with opacity only.
@@ -403,6 +447,11 @@ public class ImgOptionsBuilder
         _parts.Add($"aq:{method}");
         return this;
     }
+
+    /// <summary>
+    /// Enables auto quality optimization using a strongly-typed enum value.
+    /// </summary>
+    public ImgOptionsBuilder AutoQuality(AutoQualityMethod method) => AutoQuality(method.ToImgproxyString());
 
     /// <summary>
     /// Sets the page number for multi-page documents (PDF).
