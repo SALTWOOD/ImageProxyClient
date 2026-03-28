@@ -6,13 +6,16 @@ using Microsoft.Extensions.Options;
 
 /// <summary>
 /// Client for generating Imgproxy URLs.
-/// Supports signed and unsigned URL generation.
+/// Supports signed and unsigned URL generation with multiple source URL formats.
 /// </summary>
 public class ImgproxyClient : IImgproxyClient
 {
     private readonly byte[]? _key;
     private readonly byte[]? _salt;
+    private readonly byte[]? _encryptionKey;
+    private readonly byte[]? _encryptionIV;
     private readonly string _baseUrl;
+    private readonly SourceUrlFormat _defaultFormat;
 
     /// <inheritdoc />
     public string BaseUrl => _baseUrl;
@@ -27,11 +30,18 @@ public class ImgproxyClient : IImgproxyClient
         options.Validate();
 
         _baseUrl = options.BaseUrl.TrimEnd('/');
+        _defaultFormat = options.SourceUrlFormat;
 
         if (options.IsSigningEnabled)
         {
             _key = Convert.FromHexString(options.HexKey);
             _salt = Convert.FromHexString(options.HexSalt);
+        }
+
+        if (options.IsEncryptionEnabled)
+        {
+            _encryptionKey = Convert.FromHexString(options.HexEncryptionKey);
+            _encryptionIV = Convert.FromHexString(options.HexEncryptionIV);
         }
     }
 
@@ -61,37 +71,59 @@ public class ImgproxyClient : IImgproxyClient
     /// <inheritdoc />
     public string BuildUrl(string sourcePath, Action<ImgOptionsBuilder> config, string extension = "webp")
     {
-        var builder = new ImgOptionsBuilder();
-        config(builder);
-
-        string options = builder.Build();
-        return BuildSignedUrl(sourcePath, options, extension);
+        return BuildUrl(sourcePath, _defaultFormat, config, extension);
     }
 
     /// <inheritdoc />
     public string BuildUrl(string sourcePath, string extension = "webp")
     {
-        return BuildSignedUrl(sourcePath, string.Empty, extension);
+        return BuildUrl(sourcePath, _defaultFormat, extension);
     }
 
     /// <inheritdoc />
-    public string BuildUnsignedUrl(string sourcePath, Action<ImgOptionsBuilder> config, string extension = "webp")
+    public string BuildUrl(string sourcePath, SourceUrlFormat format, Action<ImgOptionsBuilder> config, string extension = "webp")
     {
         var builder = new ImgOptionsBuilder();
         config(builder);
 
         string options = builder.Build();
-        return BuildUnsignedUrlInternal(sourcePath, options, extension);
+        return BuildSignedUrl(sourcePath, options, extension, format);
     }
 
-    private string BuildSignedUrl(string sourcePath, string options, string extension)
+    /// <inheritdoc />
+    public string BuildUrl(string sourcePath, SourceUrlFormat format, string extension = "webp")
     {
-        string encodedSource = Base64UrlEncode(Encoding.UTF8.GetBytes(sourcePath));
+        return BuildSignedUrl(sourcePath, string.Empty, extension, format);
+    }
 
-        // Build path: /options/encoded_source.ext or /encoded_source.ext
+    /// <inheritdoc />
+    public string BuildUnsignedUrl(string sourcePath, Action<ImgOptionsBuilder> config, string extension = "webp")
+    {
+        return BuildUnsignedUrl(sourcePath, _defaultFormat, config, extension);
+    }
+
+    /// <inheritdoc />
+    public string BuildUnsignedUrl(string sourcePath, SourceUrlFormat format, Action<ImgOptionsBuilder> config, string extension = "webp")
+    {
+        var builder = new ImgOptionsBuilder();
+        config(builder);
+
+        string options = builder.Build();
+        return BuildUnsignedUrlInternal(sourcePath, options, extension, format);
+    }
+
+    private string BuildSignedUrl(string sourcePath, string options, string extension, SourceUrlFormat format)
+    {
+        // Build the source URL part based on format
+        string sourcePart = BuildSourcePart(sourcePath, extension, format);
+
+        // Build path: /options/sourcePart or /sourcePart
+        // For Plain format: /options/plain/source@ext
+        // For Encoded format: /options/encoded_source.ext
+        // For Encrypted format: /options/enc/encrypted_source.ext
         string pathAndExt = string.IsNullOrEmpty(options)
-            ? $"/{encodedSource}.{extension}"
-            : $"/{options}/{encodedSource}.{extension}";
+            ? sourcePart
+            : $"/{options}{sourcePart}";
 
         // If no signing configured, return unsigned URL
         if (_key == null || _salt == null)
@@ -102,20 +134,98 @@ public class ImgproxyClient : IImgproxyClient
         // Calculate signature
         string signature = ComputeSignature(pathAndExt);
 
-        // Final URL: {baseUrl}/{signature}/{options}/{encoded_source}.{extension}
+        // Final URL: {baseUrl}/{signature}/{options}/{source_part}
         return $"{_baseUrl}/{signature}{pathAndExt}";
     }
 
-    private string BuildUnsignedUrlInternal(string sourcePath, string options, string extension)
+    private string BuildUnsignedUrlInternal(string sourcePath, string options, string extension, SourceUrlFormat format)
     {
-        string encodedSource = Base64UrlEncode(Encoding.UTF8.GetBytes(sourcePath));
+        // Build the source URL part based on format (prefixed with /insecure)
+        string sourcePart = BuildSourcePart(sourcePath, extension, format);
 
-        // Unsigned URL format: {baseUrl}/insecure/{options}/{encoded_source}.{extension}
+        // Unsigned URL format: {baseUrl}/insecure/{options}/{source_part}
         string pathAndExt = string.IsNullOrEmpty(options)
-            ? $"/insecure/{encodedSource}.{extension}"
-            : $"/insecure/{options}/{encodedSource}.{extension}";
+            ? $"/insecure{sourcePart}"
+            : $"/insecure/{options}{sourcePart}";
 
         return $"{_baseUrl}{pathAndExt}";
+    }
+
+    /// <summary>
+    /// Builds the source URL part based on the specified format.
+    /// </summary>
+    /// <param name="sourcePath">The source image URL/path.</param>
+    /// <param name="extension">The output format extension.</param>
+    /// <param name="format">The source URL format to use.</param>
+    /// <returns>The formatted source part for the URL path.</returns>
+    private string BuildSourcePart(string sourcePath, string extension, SourceUrlFormat format)
+    {
+        return format switch
+        {
+            SourceUrlFormat.Plain => BuildPlainSourcePart(sourcePath, extension),
+            SourceUrlFormat.Encrypted => BuildEncryptedSourcePart(sourcePath, extension),
+            _ => BuildEncodedSourcePart(sourcePath, extension)
+        };
+    }
+
+    /// <summary>
+    /// Builds the source part in encoded format: /encoded_source.ext
+    /// </summary>
+    private string BuildEncodedSourcePart(string sourcePath, string extension)
+    {
+        string encodedSource = Base64UrlEncode(Encoding.UTF8.GetBytes(sourcePath));
+        return $"/{encodedSource}.{extension}";
+    }
+
+    /// <summary>
+    /// Builds the source part in plain format: /plain/source_url@ext
+    /// The source URL is URL-safe encoded (not Base64).
+    /// </summary>
+    private string BuildPlainSourcePart(string sourcePath, string extension)
+    {
+        // URL-encode the source path to make it URL-safe
+        // imgproxy expects the source URL to be properly escaped
+        string encodedSource = Uri.EscapeDataString(sourcePath);
+        return $"/plain/{encodedSource}@{extension}";
+    }
+
+    /// <summary>
+    /// Builds the source part in encrypted format: /enc/encrypted_source.ext
+    /// Uses AES-256-CBC encryption with PKCS7 padding.
+    /// </summary>
+    private string BuildEncryptedSourcePart(string sourcePath, string extension)
+    {
+        if (_encryptionKey == null || _encryptionIV == null)
+        {
+            throw new InvalidOperationException(
+                "Encryption key and IV must be configured in ImgproxyOptions to use Encrypted format. " +
+                "Set HexEncryptionKey (64 hex chars) and HexEncryptionIV (32 hex chars).");
+        }
+
+        byte[] sourceBytes = Encoding.UTF8.GetBytes(sourcePath);
+        byte[] encryptedBytes = EncryptAesCbc(sourceBytes, _encryptionKey, _encryptionIV);
+        string encodedEncrypted = Base64UrlEncode(encryptedBytes);
+
+        return $"/enc/{encodedEncrypted}.{extension}";
+    }
+
+    /// <summary>
+    /// Encrypts data using AES-256-CBC with PKCS7 padding.
+    /// </summary>
+    /// <param name="plainBytes">The plaintext bytes to encrypt.</param>
+    /// <param name="key">The 32-byte AES key.</param>
+    /// <param name="iv">The 16-byte initialization vector.</param>
+    /// <returns>The encrypted bytes.</returns>
+    private static byte[] EncryptAesCbc(byte[] plainBytes, byte[] key, byte[] iv)
+    {
+        using var aes = Aes.Create();
+        aes.Key = key;
+        aes.IV = iv;
+        aes.Mode = CipherMode.CBC;
+        aes.Padding = PaddingMode.PKCS7;
+
+        using var encryptor = aes.CreateEncryptor();
+        return encryptor.TransformFinalBlock(plainBytes, 0, plainBytes.Length);
     }
 
     private string ComputeSignature(string path)
@@ -132,6 +242,9 @@ public class ImgproxyClient : IImgproxyClient
         return Base64UrlEncode(hash);
     }
 
+    /// <summary>
+    /// Encodes bytes to URL-safe Base64 string (no padding, +/ replaced with -_).
+    /// </summary>
     private static string Base64UrlEncode(byte[] input) =>
         Convert.ToBase64String(input)
             .Replace("+", "-")

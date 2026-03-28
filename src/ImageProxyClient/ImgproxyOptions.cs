@@ -21,11 +21,38 @@ public class ImgproxyOptions
     public string HexSalt { get; set; } = string.Empty;
 
     /// <summary>
-    /// Returns true if both Key and Salt are provided.
+    /// The format to use for encoding source URLs in generated URLs.
+    /// Default is Encoded (Base64 URL-safe encoding).
+    /// </summary>
+    public SourceUrlFormat SourceUrlFormat { get; set; } = SourceUrlFormat.Encoded;
+
+    /// <summary>
+    /// The hex-encoded AES-256 encryption key for encrypting source URLs.
+    /// Must be 64 hex characters (32 bytes) when using Encrypted format.
+    /// Only required when SourceUrlFormat is Encrypted.
+    /// </summary>
+    public string HexEncryptionKey { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The hex-encoded IV (Initialization Vector) for AES-CBC encryption.
+    /// Must be 32 hex characters (16 bytes) when using Encrypted format.
+    /// Only required when SourceUrlFormat is Encrypted.
+    /// </summary>
+    public string HexEncryptionIV { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Returns true if both Key and Salt are provided for URL signing.
     /// </summary>
     public bool IsSigningEnabled =>
         !string.IsNullOrWhiteSpace(HexKey) &&
         !string.IsNullOrWhiteSpace(HexSalt);
+
+    /// <summary>
+    /// Returns true if encryption is configured for encrypted source URLs.
+    /// </summary>
+    public bool IsEncryptionEnabled =>
+        !string.IsNullOrWhiteSpace(HexEncryptionKey) &&
+        !string.IsNullOrWhiteSpace(HexEncryptionIV);
 
     /// <summary>
     /// Validates the configuration options.
@@ -52,6 +79,38 @@ public class ImgproxyOptions
         if (!string.IsNullOrWhiteSpace(HexSalt) && HexSalt.Length % 2 != 0)
         {
             throw new ArgumentException("HexSalt must have an even number of characters", nameof(HexSalt));
+        }
+
+        // Validate encryption key and IV if encrypted format is selected
+        if (SourceUrlFormat == SourceUrlFormat.Encrypted)
+        {
+            if (string.IsNullOrWhiteSpace(HexEncryptionKey))
+            {
+                throw new ArgumentException(
+                    "HexEncryptionKey is required when using Encrypted source URL format",
+                    nameof(HexEncryptionKey));
+            }
+
+            if (HexEncryptionKey.Length != 64)
+            {
+                throw new ArgumentException(
+                    "HexEncryptionKey must be 64 hex characters (32 bytes for AES-256)",
+                    nameof(HexEncryptionKey));
+            }
+
+            if (string.IsNullOrWhiteSpace(HexEncryptionIV))
+            {
+                throw new ArgumentException(
+                    "HexEncryptionIV is required when using Encrypted source URL format",
+                    nameof(HexEncryptionIV));
+            }
+
+            if (HexEncryptionIV.Length != 32)
+            {
+                throw new ArgumentException(
+                    "HexEncryptionIV must be 32 hex characters (16 bytes for AES IV)",
+                    nameof(HexEncryptionIV));
+            }
         }
     }
 }

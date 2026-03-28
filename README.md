@@ -5,6 +5,8 @@ A .NET client library for generating [Imgproxy](https://imgproxy.net/) image pro
 ## Features
 
 - HMAC-SHA256 URL signing support
+- Multiple source URL formats (Encoded, Plain, Encrypted)
+- AES-256-CBC encryption for source URLs
 - Fluent API for image processing options
 - Dependency injection (DI) support
 - Rich image processing options (resize, crop, filters, watermark, etc.)
@@ -162,15 +164,96 @@ var url = client.BuildUnsignedUrl("https://example.com/image.jpg", options =>
 // Output: http://localhost:8080/insecure/rs:fill:400:300/{encoded_source}.webp
 ```
 
+## Source URL Formats
+
+Imgproxy supports three formats for encoding the source image URL. You can specify the format using `SourceUrlFormat` enum:
+
+### 1. Encoded Format (Default)
+
+Base64 URL-safe encoded source URL:
+
+```
+http://imgproxy.example.com/%signature/%processing_options/%encoded_source_url.%extension
+```
+
+```csharp
+var client = new ImgproxyClient("http://localhost:8080", "key", "salt");
+
+// Using default format (Encoded)
+var url = client.BuildUrl("https://example.com/image.jpg", SourceUrlFormat.Encoded, 
+    o => o.Resize(400, 300));
+
+// Or specify in options
+var options = new ImgproxyOptions
+{
+    BaseUrl = "http://localhost:8080",
+    HexKey = "your-key",
+    HexSalt = "your-salt",
+    SourceUrlFormat = SourceUrlFormat.Encoded  // This is the default
+};
+var client = new ImgproxyClient(options);
+```
+
+### 2. Plain Format
+
+Human-readable plain text source URL:
+
+```
+http://imgproxy.example.com/%signature/%processing_options/plain/%source_url@%extension
+```
+
+```csharp
+var client = new ImgproxyClient("http://localhost:8080", "key", "salt");
+
+var url = client.BuildUrl("https://example.com/image.jpg", SourceUrlFormat.Plain,
+    o => o.Resize(400, 300));
+
+// Output: http://localhost:8080/{signature}/rs:fill:400:300/plain/https%3A%2F%2Fexample.com%2Fimage.jpg@webp
+```
+
+### 3. Encrypted Format
+
+AES-256-CBC encrypted source URL for additional security:
+
+```
+http://imgproxy.example.com/%signature/%processing_options/enc/%encrypted_source_url.%extension
+```
+
+```csharp
+var options = new ImgproxyOptions
+{
+    BaseUrl = "http://localhost:8080",
+    HexKey = "your-signing-key",
+    HexSalt = "your-signing-salt",
+    SourceUrlFormat = SourceUrlFormat.Encrypted,
+    // AES-256 key (32 bytes = 64 hex chars)
+    HexEncryptionKey = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    // IV (16 bytes = 32 hex chars)
+    HexEncryptionIV = "0123456789abcdef0123456789abcdef"
+};
+
+var client = new ImgproxyClient(options);
+
+var url = client.BuildUrl("https://example.com/image.jpg", 
+    o => o.Resize(400, 300));
+
+// Output: http://localhost:8080/{signature}/rs:fill:400:300/enc/{encrypted_base64}.webp
+```
+
+> **Note:** When using `SourceUrlFormat.Encrypted`, you must configure `HexEncryptionKey` (64 hex characters) and `HexEncryptionIV` (32 hex characters). The encryption uses AES-256-CBC with PKCS7 padding.
+
 ## API Reference
 
 ### IImgproxyClient
 
 | Method | Description |
 |--------|-------------|
-| `BuildUrl(sourcePath, config, extension)` | Generate signed URL |
+| `BuildUrl(sourcePath, config, extension)` | Generate signed URL with default format |
 | `BuildUrl(sourcePath, extension)` | Generate signed URL without options |
-| `BuildUnsignedUrl(sourcePath, config, extension)` | Generate unsigned URL |
+| `BuildUrl(sourcePath, format, config, extension)` | Generate signed URL with specific format |
+| `BuildUrl(sourcePath, format, extension)` | Generate signed URL without options, with specific format |
+| `BuildUnsignedUrl(sourcePath, config, extension)` | Generate unsigned URL with default format |
+| `BuildUnsignedUrl(sourcePath, format, config, extension)` | Generate unsigned URL with specific format |
 | `BaseUrl` | Get service base URL |
 
 ### ImgproxyOptions
@@ -180,6 +263,17 @@ var url = client.BuildUnsignedUrl("https://example.com/image.jpg", options =>
 | `BaseUrl` | string | Imgproxy service URL |
 | `HexKey` | string | Hex-encoded signing key |
 | `HexSalt` | string | Hex-encoded signing salt |
+| `SourceUrlFormat` | SourceUrlFormat | Format for encoding source URLs (default: Encoded) |
+| `HexEncryptionKey` | string | Hex-encoded AES-256 key (64 chars) for encrypted format |
+| `HexEncryptionIV` | string | Hex-encoded AES IV (32 chars) for encrypted format |
+
+### SourceUrlFormat Enum
+
+| Value | Description |
+|-------|-------------|
+| `Encoded` | Base64 URL-safe encoded (default) |
+| `Plain` | Plain text with URL encoding (`/plain/url@ext`) |
+| `Encrypted` | AES-256-CBC encrypted (`/enc/encrypted.ext`) |
 
 ## Development
 
