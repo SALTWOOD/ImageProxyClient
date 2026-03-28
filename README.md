@@ -1,6 +1,6 @@
-# ImageProxySharp
+# ImageProxyClient
 
-A .NET library for generating [Imgproxy](https://imgproxy.net/) image processing URLs.
+A .NET client library for generating [Imgproxy](https://imgproxy.net/) image processing URLs.
 
 ## Features
 
@@ -15,7 +15,7 @@ A .NET library for generating [Imgproxy](https://imgproxy.net/) image processing
 Install via NuGet:
 
 ```bash
-dotnet add package ImageProxySharp
+dotnet add package ImageProxyClient
 ```
 
 ## Quick Start
@@ -23,7 +23,7 @@ dotnet add package ImageProxySharp
 ### Basic Usage
 
 ```csharp
-using ImageProxySharp;
+using ImageProxyClient;
 
 // Create client
 var client = new ImgproxyClient(
@@ -49,12 +49,12 @@ Console.WriteLine(url);
 var builder = WebApplication.CreateBuilder(args);
 
 // Register from configuration
-builder.Services.AddImageProxySharp(
+builder.Services.AddImageProxyClient(
     builder.Configuration.GetSection("Imgproxy")
 );
 
 // Or register with delegate
-builder.Services.AddImageProxySharp(options =>
+builder.Services.AddImageProxyClient(options =>
 {
     options.BaseUrl = "http://localhost:8080";
     options.HexKey = "your-hex-key";
@@ -186,15 +186,15 @@ var url = client.BuildUnsignedUrl("https://example.com/image.jpg", options =>
 ### Build
 
 ```bash
-git clone https://github.com/yourname/ImageProxySharp.git
-cd ImageProxySharp
+git clone https://github.com/yourname/ImageProxyClient.git
+cd ImageProxyClient
 dotnet build
 ```
 
 ### Run Sample
 
 ```bash
-cd samples/ImageProxySharp.Sample
+cd samples/ImageProxyClient.Sample
 dotnet run
 ```
 

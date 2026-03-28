@@ -1,4 +1,4 @@
-namespace ImageProxySharp;
+namespace ImageProxyClient;
 
 /// <summary>
 /// Builder for Imgproxy image processing options.

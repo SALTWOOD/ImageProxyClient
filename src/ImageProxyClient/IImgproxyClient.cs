@@ -1,4 +1,4 @@
-namespace ImageProxySharp;
+namespace ImageProxyClient;
 
 /// <summary>
 /// Interface for Imgproxy URL generation client.

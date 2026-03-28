@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/samples/">
+    <Project Path="samples/ImageProxyClient.Sample/ImageProxyClient.Sample.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/ImageProxyClient/ImageProxyClient.csproj" />
+  </Folder>
+</Solution>

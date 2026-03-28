@@ -1,6 +1,6 @@
-# ImageProxySharp
+# ImageProxyClient
 
-一个用于生成 [Imgproxy](https://imgproxy.net/) 图片处理 URL 的 .NET 库。
+一个用于生成 [Imgproxy](https://imgproxy.net/) 图片处理 URL 的 .NET 客户端库。
 
 ## 特性
 
@@ -15,7 +15,7 @@
 通过 NuGet 安装：
 
 ```bash
-dotnet add package ImageProxySharp
+dotnet add package ImageProxyClient
 ```
 
 ## 快速开始
@@ -23,7 +23,7 @@ dotnet add package ImageProxySharp
 ### 基本用法
 
 ```csharp
-using ImageProxySharp;
+using ImageProxyClient;
 
 // 创建客户端
 var client = new ImgproxyClient(
@@ -49,12 +49,12 @@ Console.WriteLine(url);
 var builder = WebApplication.CreateBuilder(args);
 
 // 从配置注册
-builder.Services.AddImageProxySharp(
+builder.Services.AddImageProxyClient(
     builder.Configuration.GetSection("Imgproxy")
 );
 
 // 或使用委托配置
-builder.Services.AddImageProxySharp(options =>
+builder.Services.AddImageProxyClient(options =>
 {
     options.BaseUrl = "http://localhost:8080";
     options.HexKey = "你的十六进制密钥";
@@ -186,15 +186,15 @@ var url = client.BuildUnsignedUrl("https://example.com/image.jpg", options =>
 ### 构建
 
 ```bash
-git clone https://github.com/yourname/ImageProxySharp.git
-cd ImageProxySharp
+git clone https://github.com/yourname/ImageProxyClient.git
+cd ImageProxyClient
 dotnet build
 ```
 
 ### 运行示例
 
 ```bash
-cd samples/ImageProxySharp.Sample
+cd samples/ImageProxyClient.Sample
 dotnet run
 ```
 

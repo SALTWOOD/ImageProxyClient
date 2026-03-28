@@ -1,4 +1,4 @@
-namespace ImageProxySharp;
+namespace ImageProxyClient;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,12 +9,12 @@ using Microsoft.Extensions.DependencyInjection;
 public static class ServiceCollectionExtensions
 {
     /// <summary>
-    /// Registers ImageProxySharp services.
+    /// Registers ImageProxyClient services.
     /// </summary>
     /// <param name="services">Service collection.</param>
     /// <param name="configure">Configuration delegate.</param>
     /// <returns>Service collection.</returns>
-    public static IServiceCollection AddImageProxySharp(
+    public static IServiceCollection AddImageProxyClient(
         this IServiceCollection services,
         Action<ImgproxyOptions> configure)
     {
@@ -27,12 +27,12 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Registers ImageProxySharp services from configuration section.
+    /// Registers ImageProxyClient services from configuration section.
     /// </summary>
     /// <param name="services">Service collection.</param>
     /// <param name="configuration">Configuration section.</param>
     /// <returns>Service collection.</returns>
-    public static IServiceCollection AddImageProxySharp(
+    public static IServiceCollection AddImageProxyClient(
         this IServiceCollection services,
         IConfiguration configuration)
     {
@@ -45,13 +45,13 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Registers ImageProxySharp services with startup validation.
+    /// Registers ImageProxyClient services with startup validation.
     /// </summary>
     /// <param name="services">Service collection.</param>
     /// <param name="configure">Configuration delegate.</param>
     /// <param name="validateOnStart">Whether to validate configuration on startup.</param>
     /// <returns>Service collection.</returns>
-    public static IServiceCollection AddImageProxySharp(
+    public static IServiceCollection AddImageProxyClient(
         this IServiceCollection services,
         Action<ImgproxyOptions> configure,
         bool validateOnStart)

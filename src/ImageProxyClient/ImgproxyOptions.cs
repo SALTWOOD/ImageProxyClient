@@ -1,4 +1,4 @@
-namespace ImageProxySharp;
+namespace ImageProxyClient;
 
 /// <summary>
 /// Configuration options for Imgproxy client.

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\ImageProxySharp\ImageProxySharp.csproj" />
+    <ProjectReference Include="..\..\src\ImageProxyClient\ImageProxyClient.csproj" />
   </ItemGroup>
 
   <ItemGroup>

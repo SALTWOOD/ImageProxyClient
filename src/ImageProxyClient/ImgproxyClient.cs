@@ -1,4 +1,4 @@
-namespace ImageProxySharp;
+namespace ImageProxyClient;
 
 using System.Security.Cryptography;
 using System.Text;
